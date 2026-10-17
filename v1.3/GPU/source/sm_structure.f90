@@ -159,7 +159,10 @@ contains
             neighbor = 0
             read(record,*,iostat=ios) atom_tag, atom_name, xpos, ypos, zpos, &
                &atom_type, (neighbor(j),j=1,maxvalue)
-            if (ios <= 0 .and. verify(trim(atom_name), &
+            ! an atom record starts with an integer label: list-directed input
+            ! also reads a box line such as 216.832 216.832 ... as label 216
+            ! and name '216'
+            if (ios <= 0 .and. leading_integer(record) .and. verify(trim(atom_name), &
                   &'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') == 0) exit
             if (i /= 1 .or. has_box) then
                call set_status(status_value, status_invalid_argument, &
@@ -331,6 +334,23 @@ contains
       ltitle = len_trim(title)
       abort = .false.
    end subroutine publish_legacy_state
+
+   logical function leading_integer(record)
+      implicit none
+      character(*), intent(in) :: record
+      integer :: first, last
+
+      leading_integer = .false.
+      first = verify(record, ' '//achar(9))
+      if (first == 0) return
+      last = scan(record(first:), ' '//achar(9))
+      if (last == 0) then
+         last = len(record)
+      else
+         last = first + last - 2
+      end if
+      leading_integer = verify(record(first:last), '0123456789') == 0
+   end function leading_integer
 
    subroutine next_record(unit, record, ios)
       implicit none

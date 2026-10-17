@@ -159,11 +159,12 @@ contains
             neighbor = 0
             read(record,*,iostat=ios) atom_tag, atom_name, xpos, ypos, zpos, &
                &atom_type, (neighbor(j),j=1,maxvalue)
-            ! an atom record starts with an integer label: list-directed input
-            ! also reads a box line such as 216.832 216.832 ... as label 216
-            ! and name '216'
-            if (ios <= 0 .and. leading_integer(record) .and. verify(trim(atom_name), &
-                  &'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') == 0) exit
+            ! an atom record starts with an integer label and its name has a
+            ! letter: list-directed input also reads a box line such as
+            ! 216.832 216.832 ... as label 216 and name '216'; names may hold
+            ! other characters (C*, N* in AMBER, O5' in nucleic acids)
+            if (ios <= 0 .and. leading_integer(record) .and. scan(atom_name, &
+                  &'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz') > 0) exit
             if (i /= 1 .or. has_box) then
                call set_status(status_value, status_invalid_argument, &
                   'Malformed Atom Record in Coordinate File')
